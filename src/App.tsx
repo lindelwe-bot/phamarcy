@@ -31,6 +31,9 @@ import {
   LightMode as LightModeIcon
 } from '@mui/icons-material';
 import { ThemeProvider, useThemeContext } from './context/ThemeContext';
+import { InventoryProvider } from './context/InventoryContext';
+import { OrderProvider } from './context/OrderContext';
+import { PatientProvider } from './context/PatientContext';
 
 // Import components
 import Dashboard from './components/Dashboard';
@@ -254,7 +257,13 @@ const AppContent = () => {
 function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <InventoryProvider>
+        <OrderProvider>
+          <PatientProvider>
+            <AppContent />
+          </PatientProvider>
+        </OrderProvider>
+      </InventoryProvider>
     </ThemeProvider>
   );
 }

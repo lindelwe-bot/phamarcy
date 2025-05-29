@@ -88,8 +88,8 @@ class PharmacyDatabase extends Dexie {
     super('PharmacyDB');
     
     // Define the database schema
-    this.version(1).stores({
-      patients: '++id, name, phone, email, status, syncStatus, lastModified',
+      this.version(1).stores({
+        patients: '++id, name, phone, email, status, syncStatus, lastModified',
       orders: '++id, patientId, patientName, orderDate, orderStatus, syncStatus, lastModified',
       medications: '++id, name, category, status, lastModified'
     });
@@ -122,7 +122,7 @@ if (isBrowser) {
     request.onsuccess = () => {
       console.log('Old database deleted successfully');
       // Create new database instance
-      db = new PharmacyDatabase();
+    db = new PharmacyDatabase();
     };
   } catch (error) {
     console.error('Error initializing database:', error);

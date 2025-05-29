@@ -4,10 +4,10 @@ import { db } from '../db';
 
 interface PatientContextType {
   patients: Patient[];
-  addPatient: (patient: Omit<Patient, 'id'>) => Promise<void>;
-  updatePatient: (id: string, patient: Partial<Patient>) => Promise<void>;
-  deletePatient: (id: string) => Promise<void>;
-  syncPatients: () => Promise<void>;
+  addPatient: (patient: Omit<Patient, 'id'>) => void;
+  updatePatient: (id: string, patient: Partial<Patient>) => void;
+  deletePatient: (id: string) => void;
+  syncPatients: () => void;
 }
 
 const PatientContext = createContext<PatientContextType | undefined>(undefined);
@@ -31,48 +31,54 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     loadPatients();
   }, []);
 
-  const loadPatients = async () => {
+  const loadPatients = () => {
     try {
-      const allPatients = await db.patients.toArray();
-      setPatients(allPatients);
+      setPatients(db.patients);
     } catch (error) {
       console.error('Error loading patients:', error);
     }
   };
 
-  const addPatient = async (patient: Omit<Patient, 'id'>) => {
+  const addPatient = (patient: Omit<Patient, 'id'>) => {
     try {
-      const id = await db.patients.add({
+      const newPatient = {
         ...patient,
         id: crypto.randomUUID()
-      });
-      await loadPatients();
+      };
+      db.patients.push(newPatient);
+      setPatients([...db.patients]);
     } catch (error) {
       console.error('Error adding patient:', error);
     }
   };
 
-  const updatePatient = async (id: string, patient: Partial<Patient>) => {
+  const updatePatient = (id: string, patient: Partial<Patient>) => {
     try {
-      await db.patients.update(id, patient);
-      await loadPatients();
+      const index = db.patients.findIndex(p => p.id === id);
+      if (index !== -1) {
+        db.patients[index] = { ...db.patients[index], ...patient };
+        setPatients([...db.patients]);
+      }
     } catch (error) {
       console.error('Error updating patient:', error);
     }
   };
 
-  const deletePatient = async (id: string) => {
+  const deletePatient = (id: string) => {
     try {
-      await db.patients.delete(id);
-      await loadPatients();
+      const index = db.patients.findIndex(p => p.id === id);
+      if (index !== -1) {
+        db.patients.splice(index, 1);
+        setPatients([...db.patients]);
+      }
     } catch (error) {
       console.error('Error deleting patient:', error);
     }
   };
 
-  const syncPatients = async () => {
+  const syncPatients = () => {
     try {
-      await loadPatients();
+      loadPatients();
     } catch (error) {
       console.error('Error syncing patients:', error);
     }

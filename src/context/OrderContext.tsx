@@ -4,10 +4,10 @@ import { db } from '../db';
 
 interface OrderContextType {
   orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
-  deleteOrder: (id: string) => Promise<void>;
-  syncOrders: () => Promise<void>;
+  addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateOrder: (id: string, order: Partial<Order>) => void;
+  deleteOrder: (id: string) => void;
+  syncOrders: () => void;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -31,54 +31,61 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     loadOrders();
   }, []);
 
-  const loadOrders = async () => {
+  const loadOrders = () => {
     try {
-      const allOrders = await db.orders.toArray();
-      setOrders(allOrders);
+      setOrders(db.orders);
     } catch (error) {
       console.error('Error loading orders:', error);
     }
   };
 
-  const addOrder = async (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addOrder = (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const now = new Date().toISOString();
-      const id = await db.orders.add({
+      const newOrder = {
         ...order,
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now
-      });
-      await loadOrders();
+      };
+      db.orders.push(newOrder);
+      setOrders([...db.orders]);
     } catch (error) {
       console.error('Error adding order:', error);
     }
   };
 
-  const updateOrder = async (id: string, order: Partial<Order>) => {
+  const updateOrder = (id: string, order: Partial<Order>) => {
     try {
-      await db.orders.update(id, {
-        ...order,
-        updatedAt: new Date().toISOString()
-      });
-      await loadOrders();
+      const index = db.orders.findIndex(o => o.id === id);
+      if (index !== -1) {
+        db.orders[index] = {
+          ...db.orders[index],
+          ...order,
+          updatedAt: new Date().toISOString()
+        };
+        setOrders([...db.orders]);
+      }
     } catch (error) {
       console.error('Error updating order:', error);
     }
   };
 
-  const deleteOrder = async (id: string) => {
+  const deleteOrder = (id: string) => {
     try {
-      await db.orders.delete(id);
-      await loadOrders();
+      const index = db.orders.findIndex(o => o.id === id);
+      if (index !== -1) {
+        db.orders.splice(index, 1);
+        setOrders([...db.orders]);
+      }
     } catch (error) {
       console.error('Error deleting order:', error);
     }
   };
 
-  const syncOrders = async () => {
+  const syncOrders = () => {
     try {
-      await loadOrders();
+      loadOrders();
     } catch (error) {
       console.error('Error syncing orders:', error);
     }

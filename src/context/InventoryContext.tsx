@@ -4,10 +4,10 @@ import { db } from '../db';
 
 interface InventoryContextType {
   inventory: InventoryItem[];
-  addItem: (item: Omit<InventoryItem, 'id'>) => Promise<void>;
-  updateItem: (id: string, item: Partial<InventoryItem>) => Promise<void>;
-  deleteItem: (id: string) => Promise<void>;
-  syncInventory: () => Promise<void>;
+  addItem: (item: Omit<InventoryItem, 'id'>) => void;
+  updateItem: (id: string, item: Partial<InventoryItem>) => void;
+  deleteItem: (id: string) => void;
+  syncInventory: () => void;
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
@@ -31,48 +31,54 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }
     loadInventory();
   }, []);
 
-  const loadInventory = async () => {
+  const loadInventory = () => {
     try {
-      const allItems = await db.inventory.toArray();
-      setInventory(allItems);
+      setInventory(db.inventory);
     } catch (error) {
       console.error('Error loading inventory:', error);
     }
   };
 
-  const addItem = async (item: Omit<InventoryItem, 'id'>) => {
+  const addItem = (item: Omit<InventoryItem, 'id'>) => {
     try {
-      const id = await db.inventory.add({
+      const newItem = {
         ...item,
         id: crypto.randomUUID()
-      });
-      await loadInventory();
+      };
+      db.inventory.push(newItem);
+      setInventory([...db.inventory]);
     } catch (error) {
       console.error('Error adding item:', error);
     }
   };
 
-  const updateItem = async (id: string, item: Partial<InventoryItem>) => {
+  const updateItem = (id: string, item: Partial<InventoryItem>) => {
     try {
-      await db.inventory.update(id, item);
-      await loadInventory();
+      const index = db.inventory.findIndex(i => i.id === id);
+      if (index !== -1) {
+        db.inventory[index] = { ...db.inventory[index], ...item };
+        setInventory([...db.inventory]);
+      }
     } catch (error) {
       console.error('Error updating item:', error);
     }
   };
 
-  const deleteItem = async (id: string) => {
+  const deleteItem = (id: string) => {
     try {
-      await db.inventory.delete(id);
-      await loadInventory();
+      const index = db.inventory.findIndex(i => i.id === id);
+      if (index !== -1) {
+        db.inventory.splice(index, 1);
+        setInventory([...db.inventory]);
+      }
     } catch (error) {
       console.error('Error deleting item:', error);
     }
   };
 
-  const syncInventory = async () => {
+  const syncInventory = () => {
     try {
-      await loadInventory();
+      loadInventory();
     } catch (error) {
       console.error('Error syncing inventory:', error);
     }
